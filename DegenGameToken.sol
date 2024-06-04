@@ -2,13 +2,17 @@
 pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "./Ownable.sol"; 
 
 contract DegenGameToken is ERC20, Ownable {
 
+    // Item costs mapping
     mapping(uint256 => uint256) public itemCosts;
 
-    constructor() ERC20("Degen", "DGN") Ownable(msg.sender) {
+    // Inventory mapping
+    mapping(address => mapping(uint256 => uint256)) public playerInventory;
+
+    constructor() ERC20("Degen", "DGN") Ownable() {
         itemCosts[1] = 300; // Sword
         itemCosts[2] = 250; // Shield
         itemCosts[3] = 200; // Potion
@@ -36,8 +40,10 @@ contract DegenGameToken is ERC20, Ownable {
         uint256 cost = itemCosts[_itemId];
         require(cost > 0, "Item is not available.");
         require(balanceOf(msg.sender) >= cost, "Redeem Failed: Not enough balance.");
-        _transfer(msg.sender, owner(), cost);
-    
+        _transfer(msg.sender, owner, cost);
+
+        // Deliver the item to the player
+        playerInventory[msg.sender][_itemId] += 1;
     }
 
     // Burn tokens, anyone can burn their own tokens
@@ -49,6 +55,11 @@ contract DegenGameToken is ERC20, Ownable {
     // Check token balance
     function getBalance() external view returns (uint256) {
         return balanceOf(msg.sender);
+    }
+
+    // Check player inventory
+    function getInventory(uint256 _itemId) external view returns (uint256) {
+        return playerInventory[msg.sender][_itemId];
     }
 
     // Override decimals to set the token precision
